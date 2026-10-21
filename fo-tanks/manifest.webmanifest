@@ -1,0 +1,1 @@
+{"name": "Fuel Tank Sounding", "short_name": "FO Sounding", "start_url": "./index.html", "scope": "./", "display": "standalone", "background_color": "#0c161b", "theme_color": "#2f8f57", "icons": [{"src": "icon-180.png", "sizes": "180x180", "type": "image/png"}, {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}]}

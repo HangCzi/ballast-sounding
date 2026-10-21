@@ -1,0 +1,1 @@
+{"name": "ER Tank Sounding", "short_name": "ER Sounding", "start_url": "./index.html", "scope": "./", "display": "standalone", "background_color": "#0c161b", "theme_color": "#c06a12", "icons": [{"src": "icon-180.png", "sizes": "180x180", "type": "image/png"}, {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}]}
