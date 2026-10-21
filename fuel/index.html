@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fuel Plan">
+<meta name="theme-color" content="#1f4e79">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Voyage Fuel Planner</title>
+<style>
+/* Layout: settings on top, route builder as stop / leg / stop list, then a step-by-step fuel log with ROB after every step */
+:root{
+  --bg:#e9edf1; --paper:#f8fafb; --ink:#14202b; --muted:#566574; --rule:#c3ccd5; --soft:#eef2f5;
+  --lng:#14607f; --lng-bg:#d6e8f0; --mdo:#8a5a0a; --mdo-bg:#f3e3bd; --bad:#b3261e; --accent:#1f4e79;
+  --font-d:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --font-b:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1720; --paper:#16212c; --ink:#e6edf3; --muted:#93a3b2; --rule:#2c3b49; --soft:#1b2834;
+  --lng:#7cc4e4; --lng-bg:#143444; --mdo:#e8b865; --mdo-bg:#3f3015; --bad:#ff8a80; --accent:#8fb8e6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1720; --paper:#16212c; --ink:#e6edf3; --muted:#93a3b2; --rule:#2c3b49; --soft:#1b2834;
+  --lng:#7cc4e4; --lng-bg:#143444; --mdo:#e8b865; --mdo-bg:#3f3015; --bad:#ff8a80; --accent:#8fb8e6; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:15px;line-height:1.4;
+  padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font:600 2rem/1.05 var(--font-d);margin:0;letter-spacing:.01em}
+h2{font:600 1.05rem/1 var(--font-d);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 10px}
+.meta{color:var(--muted);margin:4px 0 0;font-size:.9rem}
+.card{background:var(--paper);border:1px solid var(--rule);padding:14px 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 14px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;min-width:0}
+input,select,button{font:500 1rem var(--font-b);color:var(--ink);background:var(--bg);border:1px solid var(--rule);padding:7px 9px;border-radius:3px;min-width:0;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{cursor:pointer;width:auto;background:var(--soft)}
+button:hover{border-color:var(--accent)}
+.grp{grid-column:1/-1;font:600 .8rem var(--font-d);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-top:1px solid var(--rule);padding-top:10px;margin-top:2px}
+.grp:first-child{border-top:0;padding-top:0;margin-top:0}
+#routeList{display:flex;flex-direction:column}
+div.stop,div.leg{display:grid;gap:10px 12px;align-items:end}
+div.stop{grid-template-columns:2rem minmax(0,1.6fr) minmax(0,1fr) auto;padding:6px 0}
+.idx{font:600 1.2rem var(--font-d);color:var(--muted);padding-bottom:7px}
+div.leg{grid-template-columns:2rem minmax(0,3fr) minmax(0,1fr) minmax(0,1fr);padding:2px 0 6px}
+div.leg>span.rail{align-self:stretch;border-right:2px solid var(--rule);width:0;margin-left:.7rem}
+.warn{color:var(--bad);font-size:.85rem;grid-column:2/-1}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{padding:10px 12px;display:flex;flex-direction:column;gap:2px;background:var(--paper);border:1px solid var(--rule)}
+.tile span.l{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tile b{font:600 1.7rem/1.05 var(--font-d);font-variant-numeric:tabular-nums}
+.tile small{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.tile.lng b{color:var(--lng)} .tile.mdo b{color:var(--mdo)} .neg{color:var(--bad)!important}
+.scroll{overflow-x:auto;border:1px solid var(--rule);background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font:600 .78rem var(--font-d);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--soft)}
+th:first-child,td:first-child{text-align:left}
+#log{min-width:760px}
+tr.port td{background:var(--soft)}
+tr.start td,tr.end td{font-weight:600}
+tr.end td{border-top:2px solid var(--ink)}
+td small{display:block;color:var(--muted);font-size:.72rem;font-weight:400}
+td.l{color:var(--lng)} td.m{color:var(--mdo)}
+details{background:var(--paper);border:1px solid var(--rule);padding:10px 14px}
+summary{cursor:pointer;font:600 1.05rem var(--font-d);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+details .scroll{margin-top:10px}
+#dt{min-width:760px;font-size:.88rem}
+.note{color:var(--muted);font-size:.85rem;margin:0;max-width:75ch}
+.flag{color:var(--bad)}
+@media (max-width:560px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  div.stop{grid-template-columns:2rem minmax(0,1fr) minmax(0,.8fr)} div.stop .rm{grid-column:2/-1}
+  div.leg{grid-template-columns:2rem minmax(0,1fr) minmax(0,1fr)} div.leg label:first-of-type{grid-column:2/-1}
+}
+</style>
+<div class="wrap">
+  <div>
+    <h1>Voyage Fuel Planner</h1>
+    <p class="meta">M/V Siem Confucius · distance table of 27/03/2025 · LNG and MDO in tonnes</p>
+  </div>
+
+  <section class="card" aria-labelledby="h-set">
+    <h2 id="h-set">Settings</h2>
+    <div class="grid">
+      <div class="grp">Voyage</div>
+      <label>Speed (kn)<input id="speed" type="number" inputmode="decimal" step="0.1" min="1"></label>
+      <label>Distance basis<select id="basis"><option value="berth">Berth to berth</option><option value="pilot">Pilot to pilot</option></select></label>
+      <label>ROB LNG at departure (t)<input id="robLng" type="number" inputmode="decimal" step="0.1"></label>
+      <label>ROB MDO at departure (t)<input id="robMdo" type="number" inputmode="decimal" step="0.1"></label>
+      <div class="grp">At sea, per day</div>
+      <label>LNG (t/day)<input id="seaLng" type="number" inputmode="decimal" step="0.1" min="0"></label>
+      <label>MDO (t/day)<input id="seaMdo" type="number" inputmode="decimal" step="0.1" min="0"></label>
+      <div class="grp">In port, per day</div>
+      <label>LNG (t/day)<input id="portLng" type="number" inputmode="decimal" step="0.1" min="0"></label>
+      <label>MDO (t/day)<input id="portMdo" type="number" inputmode="decimal" step="0.1" min="0"></label>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-route">
+    <h2 id="h-route">Route</h2>
+    <div id="routeList"></div>
+    <p style="margin:10px 0 0"><button id="addStop" type="button">Add port at the end</button> <button id="reset" type="button">Reset to defaults</button></p>
+  </section>
+
+  <section aria-labelledby="h-res" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="h-res" style="margin:0">Result</h2>
+    <div class="tiles" id="tiles"></div>
+    <div class="scroll"><table id="log"></table></div>
+  </section>
+
+  <section aria-labelledby="h-cmp">
+    <h2 id="h-cmp">Same route at other speeds</h2>
+    <div class="scroll"><table id="cmp"></table></div>
+  </section>
+
+  <p class="note" id="notes"></p>
+
+  <details>
+    <summary>Distance table (27 rows)</summary>
+    <div class="scroll"><table id="dt"></table></div>
+  </details>
+</div>
+
+<script>
+(function(){
+"use strict";
+var ROWS=[{"f": "Emden", "via": null, "t": "Halifax", "pp": 3086.5, "bp": 42.4, "pb": 10.1, "eca": 1107.9, "ttl": 3139.0}, {"f": "Halifax", "via": null, "t": "Davisville", "pp": 484.0, "bp": 10.2, "pb": 16.0, "eca": 510.2, "ttl": 510.2}, {"f": "Davisville", "via": null, "t": "Baltimore", "pp": 363.7, "bp": 16.0, "pb": 149.0, "eca": 528.7, "ttl": 528.7}, {"f": "Davisville", "via": null, "t": "Veracruz", "pp": 2081.8, "bp": 16.0, "pb": 6.5, "eca": 889.7, "ttl": 2104.3}, {"f": "Baltimore", "via": null, "t": "Veracruz", "pp": 1815.9, "bp": 149.0, "pb": 6.5, "eca": 592.1, "ttl": 1971.4}, {"f": "Veracruz", "via": null, "t": "Emden", "pp": 5532.3, "bp": 7.7, "pb": 41.3, "eca": 572.0, "ttl": 5581.3}, {"f": "Veracruz", "via": null, "t": "Jacksonville", "pp": 1392.3, "bp": 7.7, "pb": 14.8, "eca": 206.1, "ttl": 1414.8}, {"f": "Jacksonville", "via": null, "t": "Davisville", "pp": 875.7, "bp": 14.5, "pb": 15.6, "eca": 905.7, "ttl": 905.7}, {"f": "Baltimore", "via": null, "t": "Emden", "pp": 3739.0, "bp": 149.0, "pb": 41.3, "eca": 939.4, "ttl": 3929.3}, {"f": "Baltimore", "via": null, "t": "Davisville", "pp": 376.0, "bp": 149.0, "pb": 15.8, "eca": 540.8, "ttl": 540.8}, {"f": "Halifax", "via": null, "t": "Baltimore", "pp": 764.0, "bp": 10.2, "pb": 149.0, "eca": 923.2, "ttl": 923.2}, {"f": "Baltimore", "via": null, "t": "Jacksonville", "pp": 581.8, "bp": 149.0, "pb": 14.4, "eca": 745.2, "ttl": 745.2}, {"f": "Jacksonville", "via": "Chesapeake", "t": "Baltimore", "pp": 581.0, "bp": 14.5, "pb": 149.0, "eca": 744.5, "ttl": 744.5}, {"f": "Baltimore", "via": null, "t": "Halifax", "pp": 768.0, "bp": 149.0, "pb": 10.1, "eca": 927.1, "ttl": 927.1}, {"f": "Emden", "via": null, "t": "Baltimore", "pp": 3736.5, "bp": 41.3, "pb": 149.0, "eca": 955.3, "ttl": 3926.8}, {"f": "Emden", "via": null, "t": "Davisville", "pp": 3488.2, "bp": 40.9, "pb": 15.6, "eca": 983.2, "ttl": 3544.7}, {"f": "Davisville", "via": null, "t": "Emden", "pp": 3448.8, "bp": 15.8, "pb": 41.2, "eca": 870.3, "ttl": 3505.8}, {"f": "Emden", "via": "Pentland", "t": "Davisville", "pp": 3432.0, "bp": 41.3, "pb": 15.0, "eca": 1279.0, "ttl": 3488.3}, {"f": "Jacksonville", "via": null, "t": "Veracruz", "pp": 1394.6, "bp": 14.6, "pb": 7.7, "eca": 206.1, "ttl": 1416.9}, {"f": "Emden", "via": "Pentland", "t": "Halifax", "pp": 2885.0, "bp": 41.3, "pb": 10.1, "eca": 1206.5, "ttl": 2936.4}, {"f": "Jacksonville", "via": null, "t": "Tuxpan", "pp": 1414.1, "bp": 14.8, "pb": 4.8, "eca": 200.4, "ttl": 1433.7}, {"f": "Tuxpan", "via": null, "t": "Freeport", "pp": 529.5, "bp": 4.9, "pb": 9.0, "eca": 198.2, "ttl": 543.4}, {"f": "Freeport", "via": null, "t": "Veracruz", "pp": 605.8, "bp": 7.9, "pb": 7.7, "eca": 196.3, "ttl": 621.4}, {"f": "Davisville", "via": null, "t": "Jacksonville", "pp": 882.3, "bp": 16.2, "pb": 14.6, "eca": 913.1, "ttl": 913.1}, {"f": "Jacksonville", "via": null, "t": "Emden", "pp": 4232.6, "bp": 14.4, "pb": 41.2, "eca": 830.4, "ttl": 4288.1}, {"f": "Baltimore", "via": null, "t": "Freeport", "pp": 1807.3, "bp": 149.0, "pb": 9.0, "eca": 971.5, "ttl": 1964.3}, {"f": "Jacksonville", "via": null, "t": "Baltimore", "pp": 567.6, "bp": 14.4, "pb": 149.0, "eca": 736.0, "ttl": 736.0}];
+var PORTS=["Veracruz","Jacksonville","Baltimore","Davisville","Emden","Halifax","Tuxpan","Freeport"];
+var KEY="vfp-siem-1";
+function defaults(){return {speed:15,basis:"berth",rob:{lng:953,mdo:320},
+  rate:{seaLng:25,seaMdo:5,portLng:6,portMdo:1},
+  stops:[{port:"Veracruz",stay:0},{port:"Jacksonville",stay:24},{port:"Baltimore",stay:24},{port:"Emden",stay:0}],legs:[]};}
+var S=defaults();
+function load(){try{var j=JSON.parse(localStorage.getItem(KEY)||"null");
+  if(j&&j.stops&&j.stops.length>1&&j.stops.every(function(s){return PORTS.indexOf(s.port)>=0&&isFinite(s.stay)})&&j.rate&&j.rob&&isFinite(j.speed)){S=j;}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+var $=function(id){return document.getElementById(id)};
+function n(v){var x=parseFloat(String(v).replace(",","."));return isFinite(x)?x:0;}
+function f1(x){return x.toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1});}
+function fT(h){var t=Math.round(h*10)/10,d=Math.floor(t/24),hh=Math.round((t-d*24)*10)/10;return (d?d+" d ":"")+hh.toFixed(1)+" h";}
+function opts(a,b){var o=[];ROWS.forEach(function(r,i){if(r.f===a&&r.t===b)o.push(i)});return o;}
+function defRow(a,b){var o=opts(a,b);if(!o.length)return null;
+  var c=o.filter(function(i){return ROWS[i].via==="Chesapeake"})[0];if(c!==undefined)return c;
+  var p=o.filter(function(i){return !ROWS[i].via})[0];return p!==undefined?p:o[0];}
+function rowNm(r,basis){return basis==="berth"?r.pp+r.bp+r.pb:r.pp;}
+function syncLegs(){
+  var old=S.legs||[],out=[];
+  for(var i=0;i<S.stops.length-1;i++){
+    var a=S.stops[i].port,b=S.stops[i+1].port,k=a+">"+b,prev=old[i];
+    if(prev&&prev.k===k){out.push(prev);}else{out.push({k:k,row:defRow(a,b),nm:"",kn:""});}
+  }
+  S.legs=out;
+}
+function calc(sp){ // sp: speed forced on every leg (comparison table), else per-leg override or global
+  var ev=[],lng=n(S.rob.lng),mdo=n(S.rob.mdo);
+  var T={nm:0,seaH:0,portH:0,sLng:0,sMdo:0,pLng:0,pMdo:0,missing:0};
+  ev.push({t:"start",label:"Departure "+S.stops[0].port,lng:lng,mdo:mdo});
+  for(var i=0;i<S.legs.length;i++){
+    var L=S.legs[i],a=S.stops[i].port,b=S.stops[i+1].port,row=L.row===null?null:ROWS[L.row];
+    var tab=row?rowNm(row,S.basis):0,ov=n(L.nm),nm=ov>0?ov:tab;
+    var v=sp||(n(L.kn)>0?n(L.kn):n(S.speed));
+    var warn=(!row&&!(ov>0));if(warn)T.missing++;
+    var h=v>0?nm/v:0,dl=h/24*n(S.rate.seaLng),dm=h/24*n(S.rate.seaMdo);
+    lng-=dl;mdo-=dm;T.nm+=nm;T.seaH+=h;T.sLng+=dl;T.sMdo+=dm;
+    ev.push({t:"leg",label:a+" to "+b,sub:"ROB on arrival",nm:nm,v:v,h:h,dl:dl,dm:dm,lng:lng,mdo:mdo,warn:warn,via:row&&row.via});
+    var stay=n(S.stops[i+1].stay);
+    if(stay>0){var pl=stay/24*n(S.rate.portLng),pm=stay/24*n(S.rate.portMdo);
+      lng-=pl;mdo-=pm;T.portH+=stay;T.pLng+=pl;T.pMdo+=pm;
+      ev.push({t:"port",label:"In port "+b,sub:"ROB on departure",h:stay,dl:pl,dm:pm,lng:lng,mdo:mdo});}
+  }
+  return {ev:ev,T:T,lng:lng,mdo:mdo};
+}
+/* ---------- settings ---------- */
+function fillSettings(){
+  $("speed").value=S.speed;$("basis").value=S.basis;$("robLng").value=S.rob.lng;$("robMdo").value=S.rob.mdo;
+  $("seaLng").value=S.rate.seaLng;$("seaMdo").value=S.rate.seaMdo;$("portLng").value=S.rate.portLng;$("portMdo").value=S.rate.portMdo;
+}
+function readSettings(){
+  S.speed=$("speed").value;S.basis=$("basis").value;S.rob={lng:$("robLng").value,mdo:$("robMdo").value};
+  S.rate={seaLng:$("seaLng").value,seaMdo:$("seaMdo").value,portLng:$("portLng").value,portMdo:$("portMdo").value};
+}
+["speed","basis","robLng","robMdo","seaLng","seaMdo","portLng","portMdo"].forEach(function(id){
+  $(id).addEventListener("input",function(){readSettings();if(id==="basis")buildRoute();render();save();});
+});
+/* ---------- route builder ---------- */
+function portSel(cls,i,val){return '<select class="'+cls+'" data-i="'+i+'" aria-label="Port '+(i+1)+'">'+PORTS.map(function(p){return '<option'+(p===val?' selected':'')+'>'+p+'</option>'}).join('')+'</select>';}
+function buildRoute(){
+  var h="",last=S.stops.length-1;
+  S.stops.forEach(function(s,i){
+    if(i>0){
+      var L=S.legs[i-1],o=opts(S.stops[i-1].port,s.port),row=L.row===null?null:ROWS[L.row],tab=row?rowNm(row,S.basis):null;
+      h+='<div class="leg"><span class="rail"></span>';
+      if(o.length){
+        h+='<label>Leg '+i+' route<select class="lr" data-i="'+(i-1)+'">'+o.map(function(k){var r=ROWS[k];
+          return '<option value="'+k+'"'+(k===L.row?' selected':'')+'>'+(r.via?'via '+r.via:'standard')+' · '+f1(rowNm(r,S.basis))+' nm</option>'}).join('')+'</select></label>';
+      }else{
+        h+='<div class="warn">No '+S.stops[i-1].port+' to '+s.port+' row in the distance table. Enter the distance in nm.</div>';
+      }
+      h+='<label>Distance override (nm)<input class="ln" data-i="'+(i-1)+'" type="number" inputmode="decimal" step="0.1" min="0" placeholder="'+(tab!==null?f1(tab):'nm')+'" value="'+(L.nm||'')+'"></label>';
+      h+='<label>Speed override (kn)<input class="lk" data-i="'+(i-1)+'" type="number" inputmode="decimal" step="0.1" min="0" placeholder="'+S.speed+'" value="'+(L.kn||'')+'"></label></div>';
+    }
+    h+='<div class="stop"><span class="idx">'+(i+1)+'</span><label>'+(i===0?'Departure port':(i===last?'Final port':'Port'))+portSel('sp',i,s.port)+'</label>';
+    h+=(i===0?'<span></span>':'<label>Stay in port (h)<input class="ss" data-i="'+i+'" type="number" inputmode="decimal" step="1" min="0" value="'+s.stay+'"></label>');
+    h+=(S.stops.length>2?'<button class="rm" data-i="'+i+'" type="button" aria-label="Remove port '+(i+1)+'">Remove</button>':'<span></span>')+'</div>';
+  });
+  $("routeList").innerHTML=h;
+}
+$("routeList").addEventListener("change",function(e){
+  var c=e.target.className,i=+e.target.getAttribute("data-i");
+  if(c==="sp"){S.stops[i].port=e.target.value;syncLegs();buildRoute();render();save();}
+  else if(c==="lr"){S.legs[i].row=+e.target.value;buildRoute();render();save();}
+});
+$("routeList").addEventListener("input",function(e){
+  var c=e.target.className,i=+e.target.getAttribute("data-i");
+  if(c==="ss"){S.stops[i].stay=e.target.value;}
+  else if(c==="ln"){S.legs[i].nm=e.target.value;}
+  else if(c==="lk"){S.legs[i].kn=e.target.value;}
+  else return;
+  render();save();
+});
+$("routeList").addEventListener("click",function(e){
+  if(e.target.className==="rm"){S.stops.splice(+e.target.getAttribute("data-i"),1);syncLegs();buildRoute();render();save();}
+});
+$("addStop").addEventListener("click",function(){
+  var last=S.stops[S.stops.length-1].port,p=PORTS.filter(function(x){return x!==last})[0];
+  S.stops.push({port:p,stay:0});syncLegs();buildRoute();render();save();
+});
+$("reset").addEventListener("click",function(){S=defaults();syncLegs();fillSettings();buildRoute();render();save();});
+/* ---------- output ---------- */
+function neg(x){return x<0?' neg':'';}
+function render(){
+  var sp=n(S.speed);
+  if(!(sp>0)){$("tiles").innerHTML='<p class="note">Enter a speed above 0 kn.</p>';$("log").innerHTML="";$("cmp").innerHTML="";return;}
+  var R=calc(),T=R.T,days=(T.seaH+T.portH)/24;
+  $("tiles").innerHTML=
+   tile("","Total time",f1(days)+" d",fT(T.seaH+T.portH))+
+   tile("","Sea",f1(T.nm)+" nm",fT(T.seaH)+" at sea · "+fT(T.portH)+" in port")+
+   tile("lng","LNG consumed",f1(T.sLng+T.pLng)+" t","sea "+f1(T.sLng)+" · port "+f1(T.pLng))+
+   tile("mdo","MDO consumed",f1(T.sMdo+T.pMdo)+" t","sea "+f1(T.sMdo)+" · port "+f1(T.pMdo))+
+   tile("lng","LNG ROB on arrival",'<span class="'+neg(R.lng).trim()+'">'+f1(R.lng)+" t</span>","at "+S.stops[S.stops.length-1].port)+
+   tile("mdo","MDO ROB on arrival",'<span class="'+neg(R.mdo).trim()+'">'+f1(R.mdo)+" t</span>","at "+S.stops[S.stops.length-1].port);
+  var h='<thead><tr><th>Step</th><th>Distance (nm)</th><th>Speed (kn)</th><th>Time</th><th>LNG used (t)</th><th>MDO used (t)</th><th>LNG ROB (t)</th><th>MDO ROB (t)</th></tr></thead><tbody>';
+  R.ev.forEach(function(e,k){
+    var lastRow=(k===R.ev.length-1);
+    if(e.t==="start"){h+='<tr class="start"><td>'+e.label+'</td><td></td><td></td><td></td><td></td><td></td><td class="l">'+f1(e.lng)+'</td><td class="m">'+f1(e.mdo)+'</td></tr>';}
+    else{
+      var cls=e.t==="port"?"port":"sea"; if(lastRow&&e.t==="leg")cls+=" end";
+      h+='<tr class="'+cls+'"><td>'+e.label+(e.via?' (via '+e.via+')':'')+'<small>'+e.sub+'</small>'+(e.warn?'<small class="flag">No distance. Enter nm in the route.</small>':'')+'</td>'+
+        '<td>'+(e.t==="leg"?f1(e.nm):'')+'</td><td>'+(e.t==="leg"?f1(e.v):'')+'</td><td>'+fT(e.h)+'</td>'+
+        '<td class="l">'+f1(e.dl)+'</td><td class="m">'+f1(e.dm)+'</td>'+
+        '<td class="l'+neg(e.lng)+'">'+f1(e.lng)+'</td><td class="m'+neg(e.mdo)+'">'+f1(e.mdo)+'</td></tr>';
+    }
+  });
+  $("log").innerHTML=h+'</tbody>';
+  var speeds=[14.5,15,15.5];if(speeds.indexOf(sp)<0)speeds.unshift(sp);
+  var c='<thead><tr><th>Speed (kn)</th><th>Time at sea</th><th>Total time (d)</th><th>LNG used (t)</th><th>MDO used (t)</th><th>LNG ROB (t)</th><th>MDO ROB (t)</th></tr></thead><tbody>';
+  speeds.forEach(function(v){var Q=calc(v),q=Q.T;
+    c+='<tr'+(v===sp?' class="port"':'')+'><td>'+f1(v)+(v===sp?'<small>current</small>':'')+'</td><td>'+fT(q.seaH)+'</td><td>'+f1((q.seaH+q.portH)/24)+'</td><td class="l">'+f1(q.sLng+q.pLng)+'</td><td class="m">'+f1(q.sMdo+q.pMdo)+'</td><td class="l'+neg(Q.lng)+'">'+f1(Q.lng)+'</td><td class="m'+neg(Q.mdo)+'">'+f1(Q.mdo)+'</td></tr>';});
+  $("cmp").innerHTML=c+'</tbody>';
+  $("notes").innerHTML="Sea consumption uses your daily rates for every hour under way, including the pilot legs when the basis is berth to berth. Rates stay the same at every speed, so only the time changes. Speed overrides on a leg do not apply to the comparison table. A negative ROB shows in red.";
+}
+function tile(c,l,b,s){return '<div class="tile '+c+'"><span class="l">'+l+'</span><b>'+b+'</b><small>'+s+'</small></div>';}
+/* ---------- distance table ---------- */
+(function(){
+  var h='<thead><tr><th>From</th><th>To</th><th>Pilot to pilot</th><th>Berth to pilot</th><th>Pilot to berth</th><th>Berth to berth</th><th>In ECA</th></tr></thead><tbody>';
+  ROWS.forEach(function(r){var s=r.pp+r.bp+r.pb,d=Math.abs(s-r.ttl)>0.15;
+    h+='<tr><td>'+r.f+(r.via?' via '+r.via:'')+'</td><td style="text-align:left">'+r.t+'</td><td>'+f1(r.pp)+'</td><td>'+f1(r.bp)+'</td><td>'+f1(r.pb)+'</td><td>'+f1(s)+(d?'<small class="flag">sheet prints '+f1(r.ttl)+'</small>':'')+'</td><td>'+f1(r.eca)+'</td></tr>';});
+  $("dt").innerHTML=h+'</tbody>';
+})();
+load();syncLegs();fillSettings();buildRoute();render();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+</script>
