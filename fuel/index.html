@@ -51,6 +51,7 @@ div.leg>span.rail{align-self:stretch;border-right:2px solid var(--rule);width:0;
 .tile span.l{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .tile b{font:600 1.7rem/1.05 var(--font-d);font-variant-numeric:tabular-nums}
 .tile small{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.tile.eta b{font-size:1.2rem;line-height:1.2}
 .tile.lng b{color:var(--lng)} .tile.mdo b{color:var(--mdo)} .neg{color:var(--bad)!important}
 .scroll{overflow-x:auto;border:1px solid var(--rule);background:var(--paper)}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
@@ -85,6 +86,8 @@ details .scroll{margin-top:10px}
     <h2 id="h-set">Settings</h2>
     <div class="grid">
       <div class="grp">Voyage</div>
+      <label>Departure date and time (ship time)<input id="dep" type="datetime-local"></label>
+      <label>Arrive by (optional)<input id="tgt" type="datetime-local"></label>
       <label>Speed (kn)<input id="speed" type="number" inputmode="decimal" step="0.1" min="1"></label>
       <label>Distance basis<select id="basis"><option value="berth">Berth to berth</option><option value="pilot">Pilot to pilot</option></select></label>
       <label>ROB LNG at departure (t)<input id="robLng" type="number" inputmode="decimal" step="0.1"></label>
@@ -129,12 +132,17 @@ details .scroll{margin-top:10px}
 var ROWS=[{"f": "Emden", "via": null, "t": "Halifax", "pp": 3086.5, "bp": 42.4, "pb": 10.1, "eca": 1107.9, "ttl": 3139.0}, {"f": "Halifax", "via": null, "t": "Davisville", "pp": 484.0, "bp": 10.2, "pb": 16.0, "eca": 510.2, "ttl": 510.2}, {"f": "Davisville", "via": null, "t": "Baltimore", "pp": 363.7, "bp": 16.0, "pb": 149.0, "eca": 528.7, "ttl": 528.7}, {"f": "Davisville", "via": null, "t": "Veracruz", "pp": 2081.8, "bp": 16.0, "pb": 6.5, "eca": 889.7, "ttl": 2104.3}, {"f": "Baltimore", "via": null, "t": "Veracruz", "pp": 1815.9, "bp": 149.0, "pb": 6.5, "eca": 592.1, "ttl": 1971.4}, {"f": "Veracruz", "via": null, "t": "Emden", "pp": 5532.3, "bp": 7.7, "pb": 41.3, "eca": 572.0, "ttl": 5581.3}, {"f": "Veracruz", "via": null, "t": "Jacksonville", "pp": 1392.3, "bp": 7.7, "pb": 14.8, "eca": 206.1, "ttl": 1414.8}, {"f": "Jacksonville", "via": null, "t": "Davisville", "pp": 875.7, "bp": 14.5, "pb": 15.6, "eca": 905.7, "ttl": 905.7}, {"f": "Baltimore", "via": null, "t": "Emden", "pp": 3739.0, "bp": 149.0, "pb": 41.3, "eca": 939.4, "ttl": 3929.3}, {"f": "Baltimore", "via": null, "t": "Davisville", "pp": 376.0, "bp": 149.0, "pb": 15.8, "eca": 540.8, "ttl": 540.8}, {"f": "Halifax", "via": null, "t": "Baltimore", "pp": 764.0, "bp": 10.2, "pb": 149.0, "eca": 923.2, "ttl": 923.2}, {"f": "Baltimore", "via": null, "t": "Jacksonville", "pp": 581.8, "bp": 149.0, "pb": 14.4, "eca": 745.2, "ttl": 745.2}, {"f": "Jacksonville", "via": "Chesapeake", "t": "Baltimore", "pp": 581.0, "bp": 14.5, "pb": 149.0, "eca": 744.5, "ttl": 744.5}, {"f": "Baltimore", "via": null, "t": "Halifax", "pp": 768.0, "bp": 149.0, "pb": 10.1, "eca": 927.1, "ttl": 927.1}, {"f": "Emden", "via": null, "t": "Baltimore", "pp": 3736.5, "bp": 41.3, "pb": 149.0, "eca": 955.3, "ttl": 3926.8}, {"f": "Emden", "via": null, "t": "Davisville", "pp": 3488.2, "bp": 40.9, "pb": 15.6, "eca": 983.2, "ttl": 3544.7}, {"f": "Davisville", "via": null, "t": "Emden", "pp": 3448.8, "bp": 15.8, "pb": 41.2, "eca": 870.3, "ttl": 3505.8}, {"f": "Emden", "via": "Pentland", "t": "Davisville", "pp": 3432.0, "bp": 41.3, "pb": 15.0, "eca": 1279.0, "ttl": 3488.3}, {"f": "Jacksonville", "via": null, "t": "Veracruz", "pp": 1394.6, "bp": 14.6, "pb": 7.7, "eca": 206.1, "ttl": 1416.9}, {"f": "Emden", "via": "Pentland", "t": "Halifax", "pp": 2885.0, "bp": 41.3, "pb": 10.1, "eca": 1206.5, "ttl": 2936.4}, {"f": "Jacksonville", "via": null, "t": "Tuxpan", "pp": 1414.1, "bp": 14.8, "pb": 4.8, "eca": 200.4, "ttl": 1433.7}, {"f": "Tuxpan", "via": null, "t": "Freeport", "pp": 529.5, "bp": 4.9, "pb": 9.0, "eca": 198.2, "ttl": 543.4}, {"f": "Freeport", "via": null, "t": "Veracruz", "pp": 605.8, "bp": 7.9, "pb": 7.7, "eca": 196.3, "ttl": 621.4}, {"f": "Davisville", "via": null, "t": "Jacksonville", "pp": 882.3, "bp": 16.2, "pb": 14.6, "eca": 913.1, "ttl": 913.1}, {"f": "Jacksonville", "via": null, "t": "Emden", "pp": 4232.6, "bp": 14.4, "pb": 41.2, "eca": 830.4, "ttl": 4288.1}, {"f": "Baltimore", "via": null, "t": "Freeport", "pp": 1807.3, "bp": 149.0, "pb": 9.0, "eca": 971.5, "ttl": 1964.3}, {"f": "Jacksonville", "via": null, "t": "Baltimore", "pp": 567.6, "bp": 14.4, "pb": 149.0, "eca": 736.0, "ttl": 736.0}];
 var PORTS=["Veracruz","Jacksonville","Baltimore","Davisville","Emden","Halifax","Tuxpan","Freeport"];
 var KEY="vfp-siem-1";
-function defaults(){return {speed:15,basis:"berth",rob:{lng:953,mdo:320},
+function defaults(){return {dep:defDep(),tgt:"",speed:15,basis:"berth",rob:{lng:953,mdo:320},
   rate:{seaLng:25,seaMdo:5,portLng:6,portMdo:1},
   stops:[{port:"Veracruz",stay:0},{port:"Jacksonville",stay:24},{port:"Baltimore",stay:24},{port:"Emden",stay:0}],legs:[]};}
+function p2(x){return (x<10?"0":"")+x;}
+function defDep(){var d=new Date();return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())+"T"+p2(d.getHours())+":00";}
+function pt(v){var m=/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(v||"");return m?Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):null;}
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fD(ms){if(ms===null)return "";var d=new Date(Math.round(ms/60000)*60000);return d.getUTCDate()+" "+MON[d.getUTCMonth()]+" "+d.getUTCFullYear()+" "+p2(d.getUTCHours())+":"+p2(d.getUTCMinutes());}
 var S=defaults();
 function load(){try{var j=JSON.parse(localStorage.getItem(KEY)||"null");
-  if(j&&j.stops&&j.stops.length>1&&j.stops.every(function(s){return PORTS.indexOf(s.port)>=0&&isFinite(s.stay)})&&j.rate&&j.rob&&isFinite(j.speed)){S=j;}}catch(e){}}
+  if(j&&j.stops&&j.stops.length>1&&j.stops.every(function(s){return PORTS.indexOf(s.port)>=0&&isFinite(s.stay)})&&j.rate&&j.rob&&isFinite(j.speed)){S=j;if(typeof S.dep!=="string")S.dep=defDep();if(typeof S.tgt!=="string")S.tgt="";}}catch(e){}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 var $=function(id){return document.getElementById(id)};
 function n(v){var x=parseFloat(String(v).replace(",","."));return isFinite(x)?x:0;}
@@ -156,32 +164,33 @@ function syncLegs(){
 function calc(sp){ // sp: speed forced on every leg (comparison table), else per-leg override or global
   var ev=[],lng=n(S.rob.lng),mdo=n(S.rob.mdo);
   var T={nm:0,seaH:0,portH:0,sLng:0,sMdo:0,pLng:0,pMdo:0,missing:0};
-  ev.push({t:"start",label:"Departure "+S.stops[0].port,lng:lng,mdo:mdo});
+  var tm=pt(S.dep);ev.push({t:"start",label:"Departure "+S.stops[0].port,lng:lng,mdo:mdo,at:tm});
   for(var i=0;i<S.legs.length;i++){
     var L=S.legs[i],a=S.stops[i].port,b=S.stops[i+1].port,row=L.row===null?null:ROWS[L.row];
     var tab=row?rowNm(row,S.basis):0,ov=n(L.nm),nm=ov>0?ov:tab;
     var v=sp||(n(L.kn)>0?n(L.kn):n(S.speed));
     var warn=(!row&&!(ov>0));if(warn)T.missing++;
     var h=v>0?nm/v:0,dl=h/24*n(S.rate.seaLng),dm=h/24*n(S.rate.seaMdo);
-    lng-=dl;mdo-=dm;T.nm+=nm;T.seaH+=h;T.sLng+=dl;T.sMdo+=dm;
-    ev.push({t:"leg",label:a+" to "+b,sub:"ROB on arrival",nm:nm,v:v,h:h,dl:dl,dm:dm,lng:lng,mdo:mdo,warn:warn,via:row&&row.via});
+    if(tm!==null)tm+=h*3600000;lng-=dl;mdo-=dm;T.nm+=nm;T.seaH+=h;T.sLng+=dl;T.sMdo+=dm;
+    ev.push({t:"leg",label:a+" to "+b,sub:"ROB on arrival",nm:nm,v:v,h:h,dl:dl,dm:dm,lng:lng,mdo:mdo,warn:warn,via:row&&row.via,at:tm});
     var stay=n(S.stops[i+1].stay);
     if(stay>0){var pl=stay/24*n(S.rate.portLng),pm=stay/24*n(S.rate.portMdo);
-      lng-=pl;mdo-=pm;T.portH+=stay;T.pLng+=pl;T.pMdo+=pm;
-      ev.push({t:"port",label:"In port "+b,sub:"ROB on departure",h:stay,dl:pl,dm:pm,lng:lng,mdo:mdo});}
+      if(tm!==null)tm+=stay*3600000;lng-=pl;mdo-=pm;T.portH+=stay;T.pLng+=pl;T.pMdo+=pm;
+      ev.push({t:"port",label:"In port "+b,sub:"ROB on departure",h:stay,dl:pl,dm:pm,lng:lng,mdo:mdo,at:tm});}
   }
-  return {ev:ev,T:T,lng:lng,mdo:mdo};
+  var arr=null;for(var q=ev.length-1;q>=0;q--){if(ev[q].t==="leg"){arr=ev[q].at;break;}}
+  return {ev:ev,T:T,lng:lng,mdo:mdo,eta:arr};
 }
 /* ---------- settings ---------- */
 function fillSettings(){
-  $("speed").value=S.speed;$("basis").value=S.basis;$("robLng").value=S.rob.lng;$("robMdo").value=S.rob.mdo;
+  $("dep").value=S.dep;$("tgt").value=S.tgt;$("speed").value=S.speed;$("basis").value=S.basis;$("robLng").value=S.rob.lng;$("robMdo").value=S.rob.mdo;
   $("seaLng").value=S.rate.seaLng;$("seaMdo").value=S.rate.seaMdo;$("portLng").value=S.rate.portLng;$("portMdo").value=S.rate.portMdo;
 }
 function readSettings(){
-  S.speed=$("speed").value;S.basis=$("basis").value;S.rob={lng:$("robLng").value,mdo:$("robMdo").value};
+  S.dep=$("dep").value;S.tgt=$("tgt").value;S.speed=$("speed").value;S.basis=$("basis").value;S.rob={lng:$("robLng").value,mdo:$("robMdo").value};
   S.rate={seaLng:$("seaLng").value,seaMdo:$("seaMdo").value,portLng:$("portLng").value,portMdo:$("portMdo").value};
 }
-["speed","basis","robLng","robMdo","seaLng","seaMdo","portLng","portMdo"].forEach(function(id){
+["dep","tgt","speed","basis","robLng","robMdo","seaLng","seaMdo","portLng","portMdo"].forEach(function(id){
   $(id).addEventListener("input",function(){readSettings();if(id==="basis")buildRoute();render();save();});
 });
 /* ---------- route builder ---------- */
@@ -235,20 +244,21 @@ function render(){
   if(!(sp>0)){$("tiles").innerHTML='<p class="note">Enter a speed above 0 kn.</p>';$("log").innerHTML="";$("cmp").innerHTML="";return;}
   var R=calc(),T=R.T,days=(T.seaH+T.portH)/24;
   $("tiles").innerHTML=
-   tile("","Total time",f1(days)+" d",fT(T.seaH+T.portH))+
+   tile("eta","ETA "+S.stops[S.stops.length-1].port,R.eta!==null?fD(R.eta):"Set departure time","after "+fT(T.seaH+T.portH)+" ("+f1(days)+" d)")+
+   reqTile(T)+
    tile("","Sea",f1(T.nm)+" nm",fT(T.seaH)+" at sea · "+fT(T.portH)+" in port")+
    tile("lng","LNG consumed",f1(T.sLng+T.pLng)+" t","sea "+f1(T.sLng)+" · port "+f1(T.pLng))+
    tile("mdo","MDO consumed",f1(T.sMdo+T.pMdo)+" t","sea "+f1(T.sMdo)+" · port "+f1(T.pMdo))+
    tile("lng","LNG ROB on arrival",'<span class="'+neg(R.lng).trim()+'">'+f1(R.lng)+" t</span>","at "+S.stops[S.stops.length-1].port)+
    tile("mdo","MDO ROB on arrival",'<span class="'+neg(R.mdo).trim()+'">'+f1(R.mdo)+" t</span>","at "+S.stops[S.stops.length-1].port);
-  var h='<thead><tr><th>Step</th><th>Distance (nm)</th><th>Speed (kn)</th><th>Time</th><th>LNG used (t)</th><th>MDO used (t)</th><th>LNG ROB (t)</th><th>MDO ROB (t)</th></tr></thead><tbody>';
+  var h='<thead><tr><th>Step</th><th>Distance (nm)</th><th>Speed (kn)</th><th>Time</th><th>ETA / ETD</th><th>LNG used (t)</th><th>MDO used (t)</th><th>LNG ROB (t)</th><th>MDO ROB (t)</th></tr></thead><tbody>';
   R.ev.forEach(function(e,k){
     var lastRow=(k===R.ev.length-1);
-    if(e.t==="start"){h+='<tr class="start"><td>'+e.label+'</td><td></td><td></td><td></td><td></td><td></td><td class="l">'+f1(e.lng)+'</td><td class="m">'+f1(e.mdo)+'</td></tr>';}
+    if(e.t==="start"){h+='<tr class="start"><td>'+e.label+'</td><td></td><td></td><td></td><td>'+(e.at!==null?'<b>ETD</b> '+fD(e.at):'')+'</td><td></td><td></td><td class="l">'+f1(e.lng)+'</td><td class="m">'+f1(e.mdo)+'</td></tr>';}
     else{
       var cls=e.t==="port"?"port":"sea"; if(lastRow&&e.t==="leg")cls+=" end";
       h+='<tr class="'+cls+'"><td>'+e.label+(e.via?' (via '+e.via+')':'')+'<small>'+e.sub+'</small>'+(e.warn?'<small class="flag">No distance. Enter nm in the route.</small>':'')+'</td>'+
-        '<td>'+(e.t==="leg"?f1(e.nm):'')+'</td><td>'+(e.t==="leg"?f1(e.v):'')+'</td><td>'+fT(e.h)+'</td>'+
+        '<td>'+(e.t==="leg"?f1(e.nm):'')+'</td><td>'+(e.t==="leg"?f1(e.v):'')+'</td><td>'+fT(e.h)+'</td><td>'+(e.at!==null?'<b>'+(e.t==='leg'?'ETA':'ETD')+'</b> '+fD(e.at):'')+'</td>'+
         '<td class="l">'+f1(e.dl)+'</td><td class="m">'+f1(e.dm)+'</td>'+
         '<td class="l'+neg(e.lng)+'">'+f1(e.lng)+'</td><td class="m'+neg(e.mdo)+'">'+f1(e.mdo)+'</td></tr>';
     }
@@ -261,6 +271,13 @@ function render(){
   $("cmp").innerHTML=c+'</tbody>';
   $("notes").innerHTML="Sea consumption uses your daily rates for every hour under way, including the pilot legs when the basis is berth to berth. Rates stay the same at every speed, so only the time changes. Speed overrides on a leg do not apply to the comparison table. A negative ROB shows in red.";
 }
+function reqTile(T){
+  if(!S.tgt)return "";var a=pt(S.dep),b=pt(S.tgt);
+  if(a===null||b===null)return "";
+  var avail=(b-a)/3600000-T.portH;
+  if(avail<=0)return tile("eta","Speed needed","Not possible","Port stays alone exceed the time available");
+  var v=T.nm/avail,ok=v<=n(S.speed)+1e-9;
+  return tile("eta","Speed needed to arrive by "+fD(b),f1(v)+" kn",ok?"Your current speed is fast enough":"Higher than your "+f1(n(S.speed))+" kn");}
 function tile(c,l,b,s){return '<div class="tile '+c+'"><span class="l">'+l+'</span><b>'+b+'</b><small>'+s+'</small></div>';}
 /* ---------- distance table ---------- */
 (function(){
