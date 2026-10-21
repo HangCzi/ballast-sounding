@@ -1,4 +1,4 @@
-const V='fuel-v3';
+const V='fuel-v4';
 const PREFIX='fuel-';
 const FILES=['./','./index.html','./manifest.webmanifest','./icon-180.png','./icon-512.png'];
 const SCOPE=new URL('./',self.location).pathname;
